@@ -1,5 +1,7 @@
 const express = require('express');
 
+const CreateController = require('./cli/commands/create-controller');
+const CreateRoutes = require('./cli/commands/create-routes');
 const Router = require('./http/Router');
 const ApiMiddleware = require('./middleware/ApiMiddleware');
 
@@ -17,7 +19,30 @@ module.exports = (app) => {
     throw new Error('Routes cannot be registered with `app.register()`, use `app.applyRoutes(routeFn)` instead');
   });
 
-  const { start } = app;
+  const { start, initAll } = app;
+
+  app.initAll = async () => {
+    const { Core: { Cli } } = await app.resolveDependencies(['Core']);
+    if (!Cli.list().includes('create:controller')) {
+      Cli.register({
+        name: 'create:controller',
+        args: ['name'],
+        describe: 'Create new controller',
+        exec: CreateController,
+      });
+    }
+    if (!Cli.list().includes('create:routes')) {
+      Cli.register({
+        name: 'create:routes',
+        args: ['name'],
+        describe: 'Create new routes',
+        exec: CreateRoutes,
+      });
+    }
+
+    return initAll();
+  };
+
   app.start = async () => {
     await start();
 
