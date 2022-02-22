@@ -27,7 +27,7 @@ module.exports = (app) => {
       Cli.register({
         name: 'create:controller',
         args: ['name'],
-        describe: 'Create new controller',
+        description: 'Create new controller',
         exec: CreateController,
       });
     }
@@ -35,7 +35,7 @@ module.exports = (app) => {
       Cli.register({
         name: 'create:routes',
         args: ['name'],
-        describe: 'Create new routes',
+        description: 'Create new routes',
         exec: CreateRoutes,
       });
     }
