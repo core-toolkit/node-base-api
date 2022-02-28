@@ -2,74 +2,37 @@ const express = require('express');
 
 const CreateController = require('./cli/commands/create-controller');
 const CreateRoutes = require('./cli/commands/create-routes');
+const MakeHttpServer = require('./http/HttpServer');
 const Router = require('./http/Router');
 const ApiMiddleware = require('./middleware/ApiMiddleware');
 
 module.exports = (app) => {
-  // Defer applying routes until all controllers are ready
-  const routes = [];
-  app.applyRoutes = (applyFn) => void(routes.push(applyFn));
 
   app.registerType('Controller', 'Util', 'Core', 'UseCase');
+  app.registerType('HttpServer', 'Util', 'Core', 'Controller', 'Service');
+  app.registerType('Routes', 'HttpServer');
 
-  // Register routes as a distinct type so that they can be created through the CLI
-  // but prevent actually registering them as app components
-  app.registerType('Routes');
-  app.addTypeMiddleware('Routes', () => {
-    throw new Error('Routes cannot be registered with `app.register()`, use `app.applyRoutes(routeFn)` instead');
-  });
+  app.addTypeMiddleware('Routes', (makeFn) => ({ HttpServer }) => HttpServer.HttpServer.applyRoutes(makeFn));
 
-  const { start, initAll } = app;
+  app.register('HttpServer', 'HttpServer', MakeHttpServer(express, Router, ApiMiddleware));
 
-  app.initAll = async () => {
-    const { Core: { Cli } } = await app.resolveDependencies(['Core']);
-    if (!Cli.list().includes('create:controller')) {
-      Cli.register({
-        name: 'create:controller',
-        args: ['name'],
-        description: 'Create new controller',
-        exec: CreateController,
-      });
-    }
-    if (!Cli.list().includes('create:routes')) {
-      Cli.register({
-        name: 'create:routes',
-        args: ['name'],
-        description: 'Create new routes',
-        exec: CreateRoutes,
-      });
-    }
+  app.afterInit(({ Core: { Cli } }) => Cli.register([
+    {
+      name: 'create:controller',
+      args: ['name'],
+      description: 'Create new controller',
+      exec: CreateController,
+    },
+    {
+      name: 'create:routes',
+      args: ['name'],
+      description: 'Create new routes',
+      exec: CreateRoutes,
+    },
+  ], true));
 
-    return initAll();
-  };
-
-  app.start = async () => {
-    await start();
-
-    const {
-      Core: {
-        Config,
-        Logger: { HttpServer: Log },
-      },
-      Service,
-      Controller,
-    } = await app.resolveDependencies(['Core', 'Service', 'Controller']);
-
-    const router = Router(express, ApiMiddleware(Log));
-
-    if ('AuthService' in Service) {
-      router.use(Service.AuthService.getUserTokenMiddleware());
-    }
-
-    // Replace the deferred implementation with an immediate one
-    app.applyRoutes = (applyFn) => applyFn(router, Controller);
-
-    // Actually apply routes
-    routes.forEach(app.applyRoutes);
-
-    const api = express().use(router);
-    api.listen(Config.api.port, () => Log.info(`Listening on port ${Config.api.port}`));
-  };
+  app.afterStart(({ HttpServer: { HttpServer } }) => HttpServer.start());
+  app.beforeStop(({ HttpServer: { HttpServer } }) => HttpServer.stop());
 
   return app;
 };

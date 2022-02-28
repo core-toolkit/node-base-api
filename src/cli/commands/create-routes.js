@@ -10,7 +10,7 @@ module.exports = ({ exists, template, addToRoot }) => ({ name }) => {
   }
 
   template('api:Routes.js', destination, { name, nameLower: name.toLowerCase() });
-  addToRoot('Routes', name, './application/routes', 'api:register.js');
+  addToRoot('Routes', name, './application/routes');
 
   console.log(`Routes created at "${destination}"`);
 };
