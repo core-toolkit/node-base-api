@@ -1,6 +1,6 @@
 {
   "name": "@core-toolkit/node-base-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "REST API plugin for node-base",
   "main": "src/index.js",
   "scripts": {
@@ -20,9 +20,9 @@
     "express": "^4.17.2"
   },
   "devDependencies": {
-    "@core-toolkit/node-base-dev": "^0.0.1"
+    "@core-toolkit/node-base-dev": "0.x"
   },
   "peerDependencies": {
-    "@core-toolkit/node-base": "^0.0.6"
+    "@core-toolkit/node-base": "0.x"
   }
 }
