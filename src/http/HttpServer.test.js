@@ -7,10 +7,10 @@ const context = {
   Service: {},
   Log: new Proxy(jest.fn(), { get: (mock) => mock }),
   close: jest.fn(),
-  listen: jest.fn(),
+  listen: jest.fn((_, fn) => fn()),
   use: jest.fn(() => context),
   express: jest.fn(() => context),
-  router: jest.fn(() => 'baz'),
+  router: jest.fn(() => context),
   middleware: jest.fn(() => 'qux'),
 };
 
@@ -29,7 +29,23 @@ describe('HttpServer', () => {
     expect(context.router).toHaveBeenCalledWith(context.express, 'qux');
     expect(context.middleware).toHaveBeenCalledWith(context.Log);
     expect(context.express).toHaveBeenCalled();
-    expect(context.use).toHaveBeenCalledWith('baz');
+    expect(context.use).toHaveBeenCalledWith(context);
+  });
+
+  it('makes an HTTP server with an auth middleware', () => {
+    const mock = jest.fn(() => 'quux');
+    const contextWithAuth = {
+      ...context,
+      Service: {
+        AuthService: {
+          getUserTokenMiddleware: mock,
+        },
+      },
+    };
+    const makeServer = HttpServer(context.express, context.router, context.middleware);
+    makeServer(contextWithAuth);
+    expect(mock).toHaveBeenCalled();
+    expect(context.use).toHaveBeenCalledWith('quux');
   });
 
   describe('.applyRoutes', () => {
@@ -38,7 +54,7 @@ describe('HttpServer', () => {
       const mock = jest.fn();
 
       server.applyRoutes(mock);
-      expect(mock).toHaveBeenCalledWith('baz', context.Controller);
+      expect(mock).toHaveBeenCalledWith(context, context.Controller);
     });
   });
 
@@ -49,6 +65,7 @@ describe('HttpServer', () => {
 
       server.start();
       expect(context.listen).toHaveBeenCalledWith('bar', expect.any(Function));
+      expect(context.Log.info).toHaveBeenCalled();
     });
   });
 
