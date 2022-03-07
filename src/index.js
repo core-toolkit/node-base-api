@@ -1,3 +1,4 @@
+const http = require('http');
 const express = require('express');
 
 const CreateController = require('./cli/commands/create-controller');
@@ -14,7 +15,7 @@ module.exports = (app) => {
 
   app.addTypeMiddleware('Routes', (makeFn) => ({ HttpServer }) => HttpServer.HttpServer.applyRoutes(makeFn));
 
-  app.register('HttpServer', 'HttpServer', MakeHttpServer(express, Router, ApiMiddleware));
+  app.register('HttpServer', 'HttpServer', MakeHttpServer(http, express, Router, ApiMiddleware));
 
   app.afterInit(({ Core: { Cli } }) => Cli.register([
     {
