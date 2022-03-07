@@ -1,5 +1,5 @@
 const HttpServer = require('./HttpServer');
-const { deepMockClear } = require('../../../node-base/src/utils/Mock');
+const { deepMockClear } = require('@core-toolkit/node-base/src/utils/Mock');
 
 const context = {
   Controller: 'foo',
