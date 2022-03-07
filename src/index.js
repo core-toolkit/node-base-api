@@ -17,20 +17,30 @@ module.exports = (app) => {
 
   app.register('HttpServer', 'HttpServer', MakeHttpServer(http, express, Router, ApiMiddleware));
 
-  app.afterInit(({ Core: { Cli } }) => Cli.register([
-    {
-      name: 'create:controller',
-      args: ['name'],
-      description: 'Create new controller',
-      exec: CreateController,
-    },
-    {
-      name: 'create:routes',
-      args: ['name'],
-      description: 'Create new routes',
-      exec: CreateRoutes,
-    },
-  ], true));
+  app.afterInit(({ Core: { Cli, Project } }) => {
+    Cli.register([
+      {
+        name: 'create:controller',
+        args: ['name'],
+        description: 'Create new controller',
+        exec: CreateController,
+      },
+      {
+        name: 'create:routes',
+        args: ['name'],
+        description: 'Create new routes',
+        exec: CreateRoutes,
+      },
+    ], true);
+
+    if (!('node-base-api-ws' in Project.nodeBase.packages)) {
+      Cli.register({
+        name: 'enable:api-ws',
+        async exec(args, { addBasePackage }) { await addBasePackage('api-ws', false, args); },
+        description: 'Setup a WebSocket server',
+      }, true);
+    }
+  });
 
   app.afterStart(({ HttpServer: { HttpServer } }) => HttpServer.start());
   app.beforeStop(({ HttpServer: { HttpServer } }) => HttpServer.stop());
